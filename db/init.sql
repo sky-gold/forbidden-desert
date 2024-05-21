@@ -1,0 +1,5 @@
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    registration_date DATE DEFAULT CURRENT_DATE NOT NULL
+);
