@@ -32,3 +32,13 @@ def add_user(user_id: int, name: str):
             session.commit()
         except IntegrityError:
             session.rollback()
+
+def change_user_name(user_id: int, new_name: str):
+    print("change_user_name", user_id, new_name)
+    with Session() as session:
+        try:
+            session.execute(text("UPDATE users SET name = :new_name WHERE id = :user_id"), {"user_id": user_id, "new_name": new_name})
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            raise
