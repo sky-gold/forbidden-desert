@@ -1,8 +1,14 @@
+#include "helpers/env_vars.h"
+#include "middlewares/auth.h"
+
 #include <crow.h>
+#include <crow/logging.h>
 #include <crow/middleware_context.h>
 
 int main() {
-  crow::SimpleApp app;
+  EnvVars::init();
+
+  crow::App<AuthGuard> app;
 
   CROW_ROUTE(app, "/")([]() { return "Hello, World!"; });
 
