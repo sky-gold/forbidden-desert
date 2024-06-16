@@ -11,20 +11,35 @@
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <string>
+#include <string_view>
 #include <vector>
 
-std::string calculate_hash(const std::string &data, const std::string &key) {
-  unsigned char *result;
-  unsigned int len = SHA256_DIGEST_LENGTH;
-  result = HMAC(EVP_sha256(), key.c_str(), key.size(),
-                (unsigned char *)data.c_str(), data.size(), NULL, &len);
+std::string sha256(const std::string &input) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, input.c_str(), input.size());
+  SHA256_Final(hash, &sha256);
 
-  std::stringstream ss;
-  for (int i = 0; i < len; i++) {
-    ss << std::hex << std::setw(2) << std::setfill('0') << (int)result[i];
+  std::string res;
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+    res.push_back(hash[i]);
   }
+  return res;
+}
 
-  return ss.str();
+std::string hmac_sha256(std::string_view decodedKey, std::string_view msg) {
+  std::array<unsigned char, EVP_MAX_MD_SIZE> hash;
+  unsigned int hashLen;
+  HMAC(EVP_sha256(), decodedKey.data(), static_cast<int>(decodedKey.size()),
+       reinterpret_cast<unsigned char const *>(msg.data()),
+       static_cast<int>(msg.size()), hash.data(), &hashLen);
+  std::stringstream out;
+  for (unsigned int i = 0; i < hashLen; i++) {
+    out << std::setfill('0') << std::setw(2) << std::right << std::hex
+        << (int)hash.data()[i];
+  }
+  return out.str();
 }
 
 void AuthGuard::before_handle(crow::request &req, crow::response &res,
@@ -55,22 +70,29 @@ void AuthGuard::before_handle(crow::request &req, crow::response &res,
     }
     std::vector<std::string> v;
     for (std::string key : data.keys()) {
+      if (key == "hash") {
+        continue;
+      }
       std::string value = std::string(data[key]);
       v.push_back(key + "=" + value);
     }
     sort(v.begin(), v.end());
     std::string data_check_string;
     for (auto s : v) {
-      if (!v.empty()) {
+      if (!data_check_string.empty()) {
         data_check_string += "\n";
       }
       data_check_string += s;
     }
-    // CROW_LOG_INFO << "data_check_string=" << data_check_string;
-    std::string secret_key = calculate_hash(EnvVars::BOT_TOKEN, "");
-    std::string check_hash = calculate_hash(data_check_string, secret_key);
-    // CROW_LOG_INFO << "secret_key=" << secret_key;
-    // CROW_LOG_INFO << "check_hash=" << check_hash;
+    std::string secret_key = sha256(EnvVars::BOT_TOKEN);
+    std::string_view key_view{secret_key};
+    std::string_view msg_view{data_check_string};
+    std::string check_hash = hmac_sha256(key_view, msg_view);
+    if (check_hash != data["hash"].s()) {
+      res.code = 401;
+      res.end();
+      return;
+    }
 
     std::time_t cur_time = std::time(nullptr);
 
