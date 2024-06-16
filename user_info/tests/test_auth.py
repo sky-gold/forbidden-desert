@@ -14,6 +14,7 @@ import hmac
 import time
 
 from main import app
+from auth import check_auth
 import auth
 
 client = TestClient(app)
@@ -24,8 +25,7 @@ def get_token(bot_token, auth_date = time.time(), id = 123, name = 'Vasya'):
         "first_name": name,
         "last_name": "Pupkin",
         "username": "pupkin",
-        "photo_url": "https://placehold.co/500x500",
-        "auth_date": auth_date
+        "auth_date": int(auth_date)
     }
     a = []
     for key, value in data.items():
@@ -38,7 +38,6 @@ def get_token(bot_token, auth_date = time.time(), id = 123, name = 'Vasya'):
     check_hash = hmac.new(secret_key, msg=data_check_string.encode(), digestmod=hashlib.sha256).hexdigest()
     data['hash'] = check_hash
     return json.dumps(data)
-    
 
 
 @pytest.mark.parametrize("token, expected_detail", [
