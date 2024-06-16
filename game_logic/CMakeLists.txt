@@ -28,7 +28,7 @@ set_property(GLOBAL PROPERTY TEST_TARGETS "")
 function(add_gtest _target _source)
     add_executable(${_target} ${_source})
     add_test(NAME ${_target} COMMAND ${_target})
-    target_link_libraries(${_target} GTest::gtest GTest::gtest_main Crow::Crow libpqxx::pqxx OpenSSL::SSL)
+    target_link_libraries(${_target} GTest::gtest GTest::gtest_main Crow::Crow libpqxx::pqxx openssl::openssl)
     
     # Append the new test target to the list
     set_property(GLOBAL APPEND PROPERTY TEST_TARGETS ${_target})
