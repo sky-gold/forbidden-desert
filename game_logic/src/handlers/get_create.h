@@ -4,29 +4,24 @@
 #include <crow/http_request.h>
 #include <crow/http_response.h>
 #include <crow/logging.h>
+#include <string>
 
 template <typename... Middlewares>
 crow::response createHandler(crow::App<Middlewares...> &app,
                              const crow::request &req) {
-  CROW_LOG_INFO << "createHandler";
   int user_id = app.template get_context<AuthGuard>(req).id;
-  CROW_LOG_INFO << "user_id=" << user_id;
-  auto connection = pg_pool->connection();
-  try {
-    pqxx::work txn(*connection);
-    pqxx::result res = txn.exec("SELECT VERSION()");
-    std::ostringstream oss;
-    for (const auto &row : res) {
-      for (const auto &field : row) {
-        oss << field.c_str() << "\t";
-      }
-      oss << "\n";
-    }
-    oss.str();
-    return crow::response(200, oss.str());
-  } catch (const std::exception &e) {
-    CROW_LOG_ERROR << e.what();
-    pg_pool->freeConnection(connection);
-    return crow::response(500);
-  }
+  auto connection = makeScopeGuard(pg_pool->connection(),
+                                   [](std::shared_ptr<pqxx::connection> conn) {
+                                     pg_pool->freeConnection(conn);
+                                   });
+  pqxx::work txn(*(connection.get()));
+  std::string settings_str = "{\"difficulty\": \"easy\"}";
+  std::string query = "INSERT INTO games (status, players, settings) VALUES "
+                      "('LOBBY', ARRAY[" +
+                      std::to_string(user_id) + "], '" + txn.esc(settings_str) +
+                      "') RETURNING id";
+  pqxx::result r = txn.exec(query);
+  int game_id = r[0][0].as<int>();
+  txn.commit();
+  return crow::response(200, std::to_string(game_id));
 }
