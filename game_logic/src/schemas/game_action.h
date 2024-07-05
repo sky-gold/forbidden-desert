@@ -18,3 +18,5 @@ public:
 };
 
 std::vector<GameAction> readActions(pqxx::work &txn, int game_id);
+
+int addAction(pqxx::work &txn, const GameAction &action);

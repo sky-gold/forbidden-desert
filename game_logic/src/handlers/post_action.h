@@ -1,6 +1,7 @@
 #include "../helpers/connection_pool.h"
 #include "../logic/action_validate.h"
 #include "../logic/do_action.h"
+#include "../logic/end_game.h"
 #include "../middlewares/auth.h"
 #include <crow/app.h>
 #include <crow/http_request.h>
@@ -8,7 +9,6 @@
 #include <crow/json.h>
 #include <crow/logging.h>
 #include <pqxx/pqxx>
-#include <stdexcept>
 
 template <typename... Middlewares>
 crow::response actionHandler(crow::App<Middlewares...> &app,
@@ -24,15 +24,18 @@ crow::response actionHandler(crow::App<Middlewares...> &app,
   txn.exec("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
   try {
     // Check that action is valid (has need fields)
-    if (!actionValidate(action)) {
-      return crow::response(400, "invalid action");
+    try {
+      actionValidate(action);
+    } catch (const ActionValidationException &e) {
+      return crow::response(400, e.what());
     }
     // Do action (can throw exception if action is incorrect)
     try {
       doAction(txn, user_id, game_id, action);
-    } catch (const std::invalid_argument &e) {
+    } catch (const DoActionException &e) {
       return crow::response(400, e.what());
     }
+    TryToEnd(txn, game_id);
     txn.commit();
   } catch (const std::exception &e) {
     CROW_LOG_ERROR << "Transaction failed: " << e.what();

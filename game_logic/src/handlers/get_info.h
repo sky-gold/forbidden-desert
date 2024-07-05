@@ -15,6 +15,7 @@
 
 template <typename... Middlewares>
 crow::response infoHandler(crow::App<Middlewares...> &app, int game_id) {
+  CROW_LOG_INFO << "infoHandler";
   auto connection = makeScopeGuard(pg_pool->connection(),
                                    [](std::shared_ptr<pqxx::connection> conn) {
                                      pg_pool->freeConnection(conn);
@@ -26,9 +27,9 @@ crow::response infoHandler(crow::App<Middlewares...> &app, int game_id) {
     GameInfo game_info = readGame(txn, game_id);
     result["game_info"] = game_info.as_json();
   } catch (const std::out_of_range &e) {
-
     return crow::response(404, e.what());
   }
+  CROW_LOG_INFO << "game_info in result: " << result.dump();
   std::vector<GameAction> actions = readActions(txn, game_id);
   result["actions"] = crow::json::wvalue(crow::json::type::List);
   std::vector<crow::json::wvalue> actions_json;
@@ -36,6 +37,8 @@ crow::response infoHandler(crow::App<Middlewares...> &app, int game_id) {
     actions_json.push_back(action.as_json());
   }
   result["actions"] = crow::json::wvalue::list(actions_json);
+
+  CROW_LOG_INFO << "game_actions in result: " << result.dump();
   if (actions.empty()) {
     result["game_state"] = crow::json::load("{}");
   } else {
@@ -46,5 +49,6 @@ crow::response infoHandler(crow::App<Middlewares...> &app, int game_id) {
       result["game_state"] = crow::json::load("{}");
     }
   }
+  CROW_LOG_INFO << "game_state in result: " << result.dump();
   return crow::response(result);
 }
