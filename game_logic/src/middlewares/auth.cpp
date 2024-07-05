@@ -47,25 +47,25 @@ void AuthGuard::before_handle(crow::request &req, crow::response &res,
   try {
     auto authHeaderIt = req.headers.find("Authorization");
     if (authHeaderIt == req.headers.end()) {
+      CROW_LOG_INFO << "No Authorization Header";
       res.code = 401;
       res.end();
-      CROW_LOG_INFO << "No Authorization Header";
       return;
     }
     crow::json::rvalue data;
     try {
       data = crow::json::load(authHeaderIt->second);
     } catch (const std::exception &e) {
+      CROW_LOG_INFO << "Bad Authorization Header: " << e.what();
       res.code = 401;
       res.end();
-      CROW_LOG_INFO << "Bad Authorization Header: " << e.what();
       return;
     }
 
     if (!data.has("hash") || !data.has("id") || !data.has("auth_date")) {
+      CROW_LOG_INFO << "Authorization JSON does not have required fields";
       res.code = 400;
       res.end();
-      CROW_LOG_INFO << "Authorization JSON does not have required fields";
       return;
     }
     std::vector<std::string> v;
@@ -89,6 +89,7 @@ void AuthGuard::before_handle(crow::request &req, crow::response &res,
     std::string_view msg_view{data_check_string};
     std::string check_hash = hmac_sha256(key_view, msg_view);
     if (check_hash != data["hash"].s()) {
+      CROW_LOG_INFO << "Authorization JSON bad hash";
       res.code = 401;
       res.end();
       return;
@@ -98,7 +99,8 @@ void AuthGuard::before_handle(crow::request &req, crow::response &res,
 
     // CROW_LOG_INFO << "auth_date=" << data["auth_date"].i();
 
-    if (std::abs(data["auth_date"].i() - cur_time) > 4 * (24 * 60 * 60)) {
+    if (std::abs(data["auth_date"].i() - cur_time) > 365 * (24 * 60 * 60)) {
+      CROW_LOG_INFO << "Authorization JSON expired";
       res.code = 401;
       res.end();
       return;
