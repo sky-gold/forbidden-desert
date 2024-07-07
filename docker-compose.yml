@@ -42,7 +42,8 @@ services:
     ports:
       - "80:8080"
     volumes:
-      - ./vue_app:/vue_app
+      - ./vue_app:/app
+      - "/app/node_modules"
 volumes:
   postgres_data:
 
