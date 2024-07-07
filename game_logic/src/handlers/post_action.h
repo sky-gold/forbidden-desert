@@ -1,6 +1,7 @@
 #include "../helpers/connection_pool.h"
 #include "../logic/action_validate.h"
 #include "../logic/do_action.h"
+#include "../logic/do_action_exception.h"
 #include "../logic/end_game.h"
 #include "../middlewares/auth.h"
 #include <crow/app.h>

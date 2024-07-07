@@ -31,6 +31,8 @@ public:
 
   crow::json::wvalue as_json() const;
 
+  int player_index(int user_id) const;
+
   int state_id;
   int action_id;
   std::vector<PlayerInfo> players_info;

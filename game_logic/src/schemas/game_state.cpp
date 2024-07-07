@@ -59,6 +59,28 @@ crow::json::wvalue GameState::GameState::as_json() const {
   return res;
 }
 
+int player_index(int user_id, const GameState &game_state) {
+  int i = 0;
+  while (i < game_state.players_info.size()) {
+    if (game_state.players_info[i].user_id == user_id) {
+      break;
+    }
+    ++i;
+  }
+  return i;
+}
+
+int GameState::player_index(int user_id) const {
+  int i = 0;
+  while (i < players_info.size()) {
+    if (players_info[i].user_id == user_id) {
+      break;
+    }
+    ++i;
+  }
+  return i;
+}
+
 GameState readState(pqxx::work &txn, int action_id) {
   std::string query = "SELECT state_id, action_id, state_info FROM game_states "
                       "WHERE action_id = " +
