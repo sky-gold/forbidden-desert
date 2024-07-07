@@ -19,3 +19,5 @@ public:
 };
 
 GameInfo readGame(pqxx::work &txn, int id);
+
+void updateGameInfo(pqxx::work &txn, const GameInfo &game_info);

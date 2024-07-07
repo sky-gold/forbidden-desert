@@ -38,3 +38,20 @@ GameInfo readGame(pqxx::work &txn, int id) {
   game.created_at = row["created_at"].as<std::string>();
   return game;
 }
+
+void updateGameInfo(pqxx::work &txn, const GameInfo &game_info) {
+  std::string sql = "UPDATE games SET status = $1, players = $2, settings = "
+                    "$3, created_at = $4 WHERE id = $5";
+  // Преобразование вектора игроков в строку
+  std::string players_str = "{";
+  for (size_t i = 0; i < game_info.players.size(); ++i) {
+    players_str += std::to_string(game_info.players[i]);
+    if (i < game_info.players.size() - 1) {
+      players_str += ",";
+    }
+  }
+  players_str += "}";
+  txn.exec_params(sql, game_info.status, players_str,
+                  crow::json::wvalue(game_info.settings).dump(),
+                  game_info.created_at, game_info.id);
+}
