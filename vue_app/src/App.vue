@@ -68,15 +68,15 @@
    },
    
    methods: {
-     async onTelegramAuth(user) {
-      let res = await fetch('http://0.0.0.0:8000/auth', {
+    async onTelegramAuth(user) {
+      let res = await fetch('http://185.255.132.48:8000/auth', {
         method : 'GET',
-        headers : {
-          'Authorization': unescape(encodeURIComponent(JSON.stringify(res))),
+        headers : { 
+          'Authorization': unescape(encodeURIComponent(JSON.stringify(user))),
         }
       });
       if (res.ok) {
-       this.cookies.set("tg_user", user, null, null, null, false, "None");
+       this.cookies.set("tg_user", user, null, null, null, false, "Lax");
        this.isLogin = true;
        alert('Logged in as ' + user.first_name + ' ' + user.last_name + ' (' + user.id + (user.username ? ', @' + user.username : '') + ')');
       } else {
