@@ -6,7 +6,7 @@ class BackendRecipe(ConanFile):
     generators = "CMakeToolchain", "CMakeDeps"
 
     def requirements(self):
-        self.requires("crowcpp-crow/1.0+5")
+        self.requires("crowcpp-crow/1.2.0")
         self.requires("libpqxx/7.9.0")
         self.requires("openssl/3.2.2")
         self.requires("gtest/1.11.0")
