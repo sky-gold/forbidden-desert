@@ -1,4 +1,5 @@
 #include "../helpers/connection_pool.h"
+#include "../helpers/web_socket_manager.h"
 #include "../logic/action_validate.h"
 #include "../logic/do_action.h"
 #include "../logic/do_action_exception.h"
@@ -37,6 +38,7 @@ crow::response actionHandler(crow::App<Middlewares...> &app,
       return crow::response(400, e.what());
     }
     TryToEnd(txn, game_id);
+    ws_manager.game_updated(txn, game_id);
     txn.commit();
   } catch (const std::exception &e) {
     CROW_LOG_ERROR << "Transaction failed: " << e.what();

@@ -3,6 +3,7 @@
 #include "handlers/post_action.h"
 #include "helpers/connection_pool.h"
 #include "helpers/env_vars.h"
+#include "helpers/web_socket_manager.h"
 #include "middlewares/auth.h"
 
 #include <crow.h>
@@ -11,6 +12,7 @@
 #include <crow/http_response.h>
 #include <crow/logging.h>
 #include <crow/middleware_context.h>
+#include <crow/routing.h>
 #include <string>
 
 int main() {
@@ -18,6 +20,16 @@ int main() {
   db_init();
 
   crow::App<AuthGuard> app;
+
+  CROW_WEBSOCKET_ROUTE(app, "/ws")
+      .onopen([&](crow::websocket::connection &conn) { ws_manager.open(conn); })
+      .onclose(
+          [&](crow::websocket::connection &conn, const std::string &reason) {
+            ws_manager.close(conn, reason);
+          })
+      .onmessage(
+          [&](crow::websocket::connection &conn, const std::string &data,
+              bool is_binary) { ws_manager.message(conn, data, is_binary); });
 
   CROW_ROUTE(app, "/create")
   ([&app](const crow::request &req) { return createHandler(app, req); });
